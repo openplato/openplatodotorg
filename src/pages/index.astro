@@ -1,0 +1,92 @@
+---
+import DefaultLayout from "../layouts/DefaultLayout.astro";
+import StephanusPage from "../components/StephanusPage.astro";
+
+import { getEntry } from "astro:content";
+import { getCollection } from "astro:content";
+import type { InferEntrySchema } from "astro:content";
+const dialogs = await getCollection("dialogs");
+
+type DialogEntry = {
+	id: string;
+	collection: string;
+	data: InferEntrySchema<"dialogs">;
+};
+
+type DialogEntry2 = {
+	id: string;
+	collection: string;
+	data: Record<string, Partial<Record<string, string>>>;
+};
+
+const getDialogs = (query: string, suffix?: string): Array<DialogEntry> =>
+	dialogs.filter(({ id }) => {
+		return suffix ? id.match(query + "/" + suffix) : id.startsWith(query);
+	});
+
+const getDialog = (query: string, suffix: string): DialogEntry =>
+	dialogs.filter(({ id }) => {
+		return id.match(`${query}/${suffix}`);
+	})[0];
+
+const getDialog2 = async (query: string, suffix: string) => {
+	var tmp = {};
+	await getEntry({ collection: "dialogs", id: `${query}/${suffix}` }).then(
+		(value) => {
+			return value;
+		},
+	);
+};
+
+// var tmp = getDialog2("Alcibiades_a", "Blondell");
+// console.log("\n", tmp, typeof tmp);
+
+var options = {};
+dialogs.forEach(({ id }) => {
+	var parts = ((a) => ({ dialog: a[0], author: a[1] }))(id.split("/"));
+	if (!Object.hasOwn(options, parts.dialog)) {
+		Object.defineProperty(options, parts.dialog, {
+			value: [],
+			enumerable: true,
+		});
+	}
+	var tmp: Object[] = Object.getOwnPropertyDescriptor(
+		options,
+		parts.dialog,
+	)?.value;
+	tmp.push(parts.author);
+});
+---
+
+<div id="search" slot="search">
+	<label for="search">Search: </label>
+	<input type="text" name="search" />
+	<label for="dialogs">Dialogs</label>
+	<select name="dialogs">
+		<option selected>--</option>
+		{
+			Object.entries(options).map(([key, val]: [string, any]) => (
+				<optgroup label={key}>
+					{Object.entries(val).map(([, val]: [string, any]) => (
+						<option>
+							{key}/{val}
+						</option>
+					))}
+				</optgroup>
+			))
+		}
+	</select>
+</div>
+{JSON.stringify(dialogs[1].data[0])}
+<DefaultLayout>
+	<div id="page_1">
+		<StephanusPage
+			collection={getDialog("Alcibiades_a", "Original").data}
+		/>
+	</div>
+	<div id="page_2">
+		<StephanusPage
+			collection={getDialog("Alcibiades_a", "Blondell").data}
+		/>
+	</div>
+</DefaultLayout>
