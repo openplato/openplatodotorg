@@ -1,3 +1,2 @@
-# Open Plato Dot Org
-
-This repository stores the code for openplato.org
+# openplatodotorg
+Open Plato dot org
